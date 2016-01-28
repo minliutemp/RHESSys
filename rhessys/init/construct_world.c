@@ -773,7 +773,7 @@ struct world_object *construct_world(struct command_line_object *command_line){
 			alloc(sizeof(struct base_station_ncheader_object),"base_station_ncheader","construct_world");
 			world[0].base_station_ncheader = construct_netcdf_header(world,
 												world[0].base_station_files[0]);
-			/*printf("\n  file=%s firstID=%d num=%d numfiles=%d lai=%lf screenht=%lf sdist=%lf startyr=%d dayoffset=%d leapyr=%d precipmult=%lf",
+			/*printf("\n  file=%s firstID=%d num=%d numfiles=%d lai=%lf screenht=%lf sdist=%lf startyr=%d dayoffset=%d leapyr=%d precipmult=%lf \n",
 				   world[0].base_station_ncheader[0].netcdf_tmax_filename,
 				   world[0].ID,
 				   world[0].num_base_stations,

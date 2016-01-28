@@ -1,9 +1,9 @@
-PGM  = rhessys5.20.0
+PGM  = rhessys5.20.0nov10
 VERSION = 5.20.0
 CC = gcc 
 #CFLAGS = -O -std=c99
-CFLAGS =-Wall -g -std=c99
-RHESSYS_BIN = /usr/local/bin
+CFLAGS = -Wall -g -fopenmp -std=c99
+RHESSYS_BIN = /home/tung/bin
 OBJ = objects
 
 OS := $(shell uname)

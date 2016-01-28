@@ -69,6 +69,7 @@ struct base_station_ncheader_object *construct_netcdf_header (
 	 
 	fseek(base_station_file,0,SEEK_SET);	
 	baseid = -1;
+	/* T.N, Oct 2015: include wind data */
 	while (fgets(buffer, sizeof(buffer), base_station_file) != NULL) {
 		if (buffer != NULL) {
 			sscanf(buffer, "%s %s", first, second);
@@ -96,6 +97,8 @@ struct base_station_ncheader_object *construct_netcdf_header (
 				strcpy(base_station_ncheader[0].netcdf_tmin_filename,first);
 			} else if(strcmp(second,"netcdf_rain_filename") == 0){
 				strcpy(base_station_ncheader[0].netcdf_rain_filename,first);
+			} else if(strcmp(second,"netcdf_wind_filename") == 0){
+				strcpy(base_station_ncheader[0].netcdf_wind_filename,first);
 			} else if(strcmp(second,"netcdf_elev_filename") == 0){
 				strcpy(base_station_ncheader[0].netcdf_elev_filename,first);
 			} else if(strcmp(second,"netcdf_var_tmax") == 0){
@@ -104,6 +107,8 @@ struct base_station_ncheader_object *construct_netcdf_header (
 				strcpy(base_station_ncheader[0].netcdf_tmin_varname,first);
 			} else if(strcmp(second,"netcdf_var_rain") == 0){
 				strcpy(base_station_ncheader[0].netcdf_rain_varname,first);
+			} else if(strcmp(second,"netcdf_var_wind") == 0){
+				strcpy(base_station_ncheader[0].netcdf_wind_varname,first);				
 			} else if(strcmp(second,"netcdf_var_elev") == 0){
 				strcpy(base_station_ncheader[0].netcdf_elev_varname,first);
 				base_station_ncheader[0].elevflag = 1;
@@ -133,7 +138,7 @@ struct base_station_ncheader_object *construct_netcdf_header (
 		
 	fclose(base_station_file);	
 	/*printf("finish reading base info\n");*/
-	/*printf("\nFinished construct netcdf header: lastID=%d lai=%lf ht=%lf sdist=%lf yr=%d day=%d lpyr=%d pmult=%lf",
+	/*printf("\nFinished construct netcdf header: lastID=%d lai=%lf ht=%lf sdist=%lf yr=%d day=%d lpyr=%d pmult=%lf \n",
 		   base_station_ncheader[0].lastID,
 		   base_station_ncheader[0].effective_lai,
 		   base_station_ncheader[0].screen_height,
@@ -141,7 +146,7 @@ struct base_station_ncheader_object *construct_netcdf_header (
 		   base_station_ncheader[0].year_start,
 		   base_station_ncheader[0].day_offset,
 		   base_station_ncheader[0].leap_year,
-		   base_station_ncheader[0].precip_mult);*/
-	
+		   base_station_ncheader[0].precip_mult);
+	*/
 	return(base_station_ncheader);
 }

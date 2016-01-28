@@ -105,16 +105,6 @@ struct base_station_object *construct_netcdf_grid (
 	char	buffertmin[MAXSTR*100];
 	char	bufferrain[MAXSTR*100];
 	
-	// T.N Temporarily add threshold for tmax & tmin to check for errors in input data
-	// TO DO: put these into one of the def files or one extra input file
-	double max_tmax;
-	double min_tmin;
-	
-	// For WA, the threshold are below
-	//http://www.ncdc.noaa.gov/extremes/scec/records
-	max_tmax = 50;
-	min_tmin = -50;
-	
 	FILE*	base_station_file;
 
 	int instartday;		//days since Jan 1,  STARTYEAR
@@ -158,7 +148,7 @@ struct base_station_object *construct_netcdf_grid (
 		base_station[0].daily_clim[0].tmax = (double *) alloc(duration.day * sizeof(double), "tmax",  "construct_netcdf_grid");
 		base_station[0].daily_clim[0].tmin = (double *) alloc(duration.day * sizeof(double), "tmin",  "construct_netcdf_grid");
 		base_station[0].daily_clim[0].rain = (double *) alloc(duration.day * sizeof(double), "rain",  "construct_netcdf_grid");
-		base_station[0].daily_clim[0].wind = (double *) alloc(duration.day * sizeof(double), "wind",  "construct_netcdf_grid"); // T.N
+		base_station[0].daily_clim[0].wind = (double *) alloc(duration.day * sizeof(double), "wind",  "construct_netcdf_grid");
 		/*--------------------------------------------------------------*/
 		/*	initialize the rest of the clim sequences as null	*/
 		/*--------------------------------------------------------------*/
@@ -227,8 +217,8 @@ struct base_station_object *construct_netcdf_grid (
 								base_station_ncheader[0].leap_year);
 	   
 		tempdata = (float *) alloc(duration.day * sizeof(float), "tempdata", "construct_netcdf_grid");
-		//printf("net_y:%f net_x:%f\n", net_y, net_x);
-		//printf("tmax filename:%s varname:%s sdist:%f instartday:%d dura:%d\n", base_station_ncheader[0].netcdf_tmax_filename,  base_station_ncheader[0].netcdf_tmax_varname, base_station_ncheader[0].sdist, instartday, duration.day);
+		printf("net_y:%f net_x:%f\n", net_y, net_x);
+		printf("tmax filename:%s varname:%s sdist:%f instartday:%d dura:%d\n", base_station_ncheader[0].netcdf_tmax_filename,  base_station_ncheader[0].netcdf_tmax_varname, base_station_ncheader[0].sdist, instartday, duration.day);
 		
 		/* ------------------ TMAX ------------------ */
 		k = get_netcdf_var_timeserias(
@@ -250,28 +240,9 @@ struct base_station_object *construct_netcdf_grid (
 		}
 		for (j = 0; j < duration.day; j++){
 			base_station[0].daily_clim[0].tmax[j] = (double)tempdata[j];
-			//printf("day:%d tmax:%f\n", j, base_station[0].daily_clim[0].tmax[j]);
+			printf("day:%d tmax:%f\n", j, base_station[0].daily_clim[0].tmax[j]);
 		}
-		
-		for (j = 0; j < duration.day; j++){
-			// T.N: Check for error in tmax
-			if (base_station[0].daily_clim[0].tmax[j] > max_tmax) {
-				printf("WARNING: day:%d tmax:%f smaller than threshold %f\n", j, base_station[0].daily_clim[0].tmax[j], max_tmax);
-				if (j == 0 || j == duration.day) { // if first day or last day
-					base_station[0].daily_clim[0].tmax[j] = max_tmax;
-					printf("Tmax after fixing 1: %f \n", base_station[0].daily_clim[0].tmax[j]);
-				} else { // do interpolation between the previous day & the next day
-					if (base_station[0].daily_clim[0].tmax[j+1] < max_tmax) { // if the next day doesn't have error
-						base_station[0].daily_clim[0].tmax[j] = 0.5 * (base_station[0].daily_clim[0].tmax[j+1] + base_station[0].daily_clim[0].tmax[j-1]);
-						printf("Tmax after fixing 2: %f \n", base_station[0].daily_clim[0].tmax[j]);
-					} else {
-						base_station[0].daily_clim[0].tmax[j] = base_station[0].daily_clim[0].tmax[j-1];
-						printf("Tmax after fixing 3: %f \n", base_station[0].daily_clim[0].tmax[j]);
-					}					
-				}
-			}
-		}
-			
+	
 		/* ------------------ TMIN ------------------ */
 		k = get_netcdf_var_timeserias(
 									  base_station_ncheader[0].netcdf_tmin_filename, 
@@ -290,29 +261,9 @@ struct base_station_object *construct_netcdf_grid (
 			printf("------------------------------\n");
 			exit(0);
 		}
-		
 		for(j = 0; j < duration.day; j++){
 			base_station[0].daily_clim[0].tmin[j] = (double)tempdata[j];
-			//printf("day:%d tmin:%f\n", j, base_station[0].daily_clim[0].tmin[j]);
-		}
-		
-		for(j = 0; j < duration.day; j++){
-			// T.N: Check for error in tmin
-			if (base_station[0].daily_clim[0].tmin[j] < min_tmin) {
-				printf("WARNING: day:%d tmin:%f smaller than threshold %f\n", j, base_station[0].daily_clim[0].tmin[j], min_tmin);
-				if (j == 0 || j == duration.day) { // if first day or last day
-					base_station[0].daily_clim[0].tmin[j] = min_tmin;
-					printf("Tmin after fixing 1: %f \n", base_station[0].daily_clim[0].tmin[j]);
-				} else { // do interpolation between the previous day & the next day
-					if (base_station[0].daily_clim[0].tmin[j+1] > min_tmin) { // if the next day doesn't have error
-						base_station[0].daily_clim[0].tmin[j] = 0.5 * (base_station[0].daily_clim[0].tmin[j+1] + base_station[0].daily_clim[0].tmin[j-1]);
-						printf("Tmin after fixing 2: %f \n", base_station[0].daily_clim[0].tmin[j]);
-					} else {
-						base_station[0].daily_clim[0].tmin[j] = base_station[0].daily_clim[0].tmin[j-1];
-						printf("Tmin after fixing 3: %f \n", base_station[0].daily_clim[0].tmin[j]);
-					}					
-				}
-			}
+			printf("day:%d tmin:%f\n", j, base_station[0].daily_clim[0].tmin[j]);
 		}
 	
 		/* ------------------ PRECIP ------------------ */
@@ -335,10 +286,7 @@ struct base_station_object *construct_netcdf_grid (
 		}
 		for(j = 0; j < duration.day; j++){
 			base_station[0].daily_clim[0].rain[j] = (double)tempdata[j] * base_station_ncheader[0].precip_mult;
-			if (base_station[0].daily_clim[0].rain[j] < 0.0) {
-				printf("WARNING: day:%d precip:%f < 0.0 \n", j, base_station[0].daily_clim[0].rain[j]);
-			}
-			//printf("day:%d rain:%f\n", j, base_station[0].daily_clim[0].rain[j]);
+			printf("day:%d rain:%f\n", j, base_station[0].daily_clim[0].rain[j]);
 		}
 		
 		/* T.N, Oct. 2015: include wind data */
@@ -362,10 +310,7 @@ struct base_station_object *construct_netcdf_grid (
 		}
 		for(j = 0; j < duration.day; j++){
 			base_station[0].daily_clim[0].wind[j] = (double)tempdata[j];
-			if (base_station[0].daily_clim[0].wind[j] < 0.0) {
-				printf("WARNING: day:%d wind:%f < 0.0 \n", j, base_station[0].daily_clim[0].wind[j]);
-			}
-			//printf("day:%d wind:%f\n", j, base_station[0].daily_clim[0].wind[j]);
+			printf("day:%d wind:%f\n", j, base_station[0].daily_clim[0].wind[j]);
 		}
 		
 		/* ------------------ ELEV ------------------ */

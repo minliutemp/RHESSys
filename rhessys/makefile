@@ -1,4 +1,4 @@
-PGM  = rhessys5.20.0
+PGM  = rhessys5.20.0.canopy
 VERSION = 5.20.0
 CC = gcc 
 #CFLAGS = -O -std=c99

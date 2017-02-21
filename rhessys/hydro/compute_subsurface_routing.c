@@ -318,11 +318,14 @@ void compute_subsurface_routing(struct command_line_object *command_line,
 					+ patch[0].soil_ns.NH4_Qout + patch[0].soil_ns.NO3_Qout
 					- patch[0].soil_ns.NH4_Qin - patch[0].soil_ns.NO3_Qin
 					- patch[0].soil_ns.DON_Qin);
+            #pragma omp critical
+            {
 			patch[0].surface_ns_leach += ((patch[0].surface_NO3_Qout
 					- patch[0].surface_NO3_Qin)
 					+ (patch[0].surface_NH4_Qout - patch[0].surface_NH4_Qin)
 					+ (patch[0].surface_DON_Qout - patch[0].surface_DON_Qin));
 			patch[0].Qin_total += patch[0].Qin + patch[0].surface_Qin;
+            }
 			patch[0].Qout_total += patch[0].Qout + patch[0].surface_Qout;
 
 			patch[0].surface_Qin = 0.0;
@@ -379,8 +382,10 @@ void compute_subsurface_routing(struct command_line_object *command_line,
 							  + patch[0].hourly_sur2stream_flow;
 		
    //if (k >=0){ 
-     if (k == (n_timesteps - 1))
+   if (k == (n_timesteps - 1))
 			  {     
+                #pragma omp critical
+                {
 			      if ((patch[0].sat_deficit
 						- (patch[0].unsat_storage + patch[0].rz_storage))
 						< -1.0 * ZERO) {
@@ -553,8 +558,6 @@ void compute_subsurface_routing(struct command_line_object *command_line,
 										* patch[0].surface_DOC;
 								Nout = NO3_out + NH4_out + DON_out;
 							}
-              #pragma omp critical
-              {
 							if (neigh[0].drainage_type == STREAM) {
 								neigh[0].Qin_total += Qout * patch[0].area
 										/ neigh[0].area;
@@ -602,7 +605,6 @@ void compute_subsurface_routing(struct command_line_object *command_line,
 								}
 
 							}
-              } //omp critical
 						}
 						if (grow_flag > 0) {
 							patch[0].surface_DOC -= (excess
@@ -997,9 +999,8 @@ void compute_subsurface_routing(struct command_line_object *command_line,
 				/*update accumulator variables                                            */
 				/*-----------------------------------------------------------------------*/
 				/* the accumulator is updated in update_basin_patch_accumulator.c in basin_daily_F.c*/
-
-
-			}
+            }  //omp critical
+        }  //end k == (n_timesteps - 1)
 				/*---------------------------------------------------------------------*/
 				/*update daily output: the patch[0].base_flow and patch[0].return_flow
 				 * is the summation of 24 hours return_flow and base_flow from previous 

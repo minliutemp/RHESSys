@@ -101,7 +101,8 @@ void	canopy_stratum_daily_I(
 		double,
 		double,
 		struct date,
-		int);
+		int,
+    struct canopy_strata_object *);
 
 	void	update_mortality(
 		struct epconst_struct,
@@ -284,7 +285,8 @@ void	canopy_stratum_daily_I(
 		stratum[0].gap_fraction,
 		basin[0].theta_noon,
 		current_date,
-		command_line[0].grow_flag);
+		command_line[0].grow_flag,
+    stratum);
 
 	/*--------------------------------------------------------------*/
 	/* if it is the last day of litterfall, perform carbon/nitrogen */

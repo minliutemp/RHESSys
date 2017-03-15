@@ -357,7 +357,15 @@ struct canopy_strata_object *construct_canopy_strata(
 	canopy_strata[0].acc_month.length = 0;
 
         canopy_strata[0].cs.Tacc = 20.0;	
+	
 	/*--------------------------------------------------------------*/
+  /* Initialze corrupted maximum stomatal conductance             */
+	/*--------------------------------------------------------------*/
+
+  canopy_strata[0].stomatal_conductance_max_corrupt = canopy_strata[0].defaults[0][0].epc.gl_smax;
+
+
+  /*--------------------------------------------------------------*/
 	/*	determine current lai and height  based on current leaf carbon	*/
 	/* 	we need to initialize the sunlit/shaded proportions of LAI here */
 	/*	(these will later be updated in update_phenology	*/

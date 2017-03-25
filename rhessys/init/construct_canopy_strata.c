@@ -359,10 +359,10 @@ struct canopy_strata_object *construct_canopy_strata(
         canopy_strata[0].cs.Tacc = 20.0;	
 	
 	/*--------------------------------------------------------------*/
-  /* Initialze corrupted maximum stomatal conductance             */
+  /* Initialze damaged   maximum stomatal conductance             */
 	/*--------------------------------------------------------------*/
 
-  canopy_strata[0].stomatal_conductance_max_corrupt = canopy_strata[0].defaults[0][0].epc.gl_smax;
+  canopy_strata[0].mult_conductance.damage = 1;
 
 
   /*--------------------------------------------------------------*/

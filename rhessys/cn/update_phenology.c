@@ -71,7 +71,7 @@ void update_phenology(struct zone_object  *zone,
 					  double	theta_noon,
 					  struct date current_date,
 					  int	grow_flag,
-            struct  canopy_strata_object *canopy_strata)
+            struct  mult_conduct_struct *multiplier)
 {
 	/*--------------------------------------------------------------*/
 	/*  Local function declaration                                  */
@@ -407,22 +407,22 @@ void update_phenology(struct zone_object  *zone,
 	}
 	*/
 
-	/*-----------------------------------------------------------------------*/
-  /* Reduce stomatal_conductance_max in response to drought or fire        */
-  /* based on Weibull function from McDowell et al. 2013                   */
-  /* psi_critical is the critical water potential that leads to 63% of     */
-  /* conductivity reduction.                                               */
-  /* Using equation (1), the less vulnerable curve parameters are:         */
-  /* wp_critical = 3.992, shape = 2.6.  The more vulnerable curves are:    */
-  /* wp_critical  = 3.43, shape = 1.65                                     */
-	/*-----------------------------------------------------------------------*/
+	/*-----------------------------------------------------------------------------*/
+  /* Reduce stomatal_conductance_max in response to drought or fire              */
+  /* based on Weibull function from McDowell et al. 2013                         */
+  /* damage_wp_critical is the critical water potential that leads to 63% of     */
+  /* conductivity reduction.                                                     */
+  /* Using equation (1), the less vulnerable curve parameters are:               */
+  /* wp_critical = 3.992, shape = 2.6.  The more vulnerable curves are:          */
+  /* wp_critical  = 3.43, shape = 1.65                                           */
+	/*-----------------------------------------------------------------------------*/
 
-  // canopy_strata[0].stomatal_conductance_max_corrupt = pow(-M_E, (-pow(((-wp_branch - wp_root) / wp_critical), shape)));
+ /* canopy_strata[0].mult_conductance[0][0].damage  = pow(M_E, (-pow(((LWP_predawn) / damage_wp_critical), damage_shape)));
 
- /* if (canopy_strata[0].defaults[0][0].pspread_corruption_rel == 1) {
-          canopy_strata[0].stomatal_conductance_max_corrupt = 1-(canopy_strata[0].defaults[0][0].pspread_corruption_rel * pspread;
+ if (canopy_strata[0].defaults[0][0].pspread_damage_rel == 1) {
+          canopy_strata[0].mult_conductance[0][0].damage = 1-(canopy_strata[0].defaults[0][0].pspread_damage_rel * pspread;
   } else {
-          canopy_strata[0].stomatal_conductance_max_corrupt = 1-((pow(canopy_strata[0].defaults[0][0].pspread_corruption_rel, pspread)-1) / (canopy_strata[0].defaults[0][0].pspread_corruption_rel-1));  */
+          canopy_strata[0].mult_conductance[0][0].damage = 1-((pow(canopy_strata[0].defaults[0][0].pspread_damage_rel, pspread)-1) / (canopy_strata[0].defaults[0][0].pspread_damage_rel-1)); */
 
 	if ((frootlitfallc > 0.0)  && (grow_flag > 0) && (cs->frootc > ZERO) && (ns->frootn > ZERO)){
 		/*--------------------------------------------------------------*/

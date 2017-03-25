@@ -2504,6 +2504,7 @@ struct mult_conduct_struct
         double  CO2;    /* 0-1 */
         double  tmin;   /* 0-1 */
         double  vpd;    /* 0-1 */
+        double  damage; /* 0-1 */
         };
 
 /* canopy ecophysiological constants */
@@ -2726,7 +2727,6 @@ struct  canopy_strata_object
         double  potential_evaporation;                          /*  meters/day  */
         double  rain_stored;                                    /*  meters      */
         double  snow_stored;                                    /*  meters      */
-        double  stomatal_conductance_max_corrupt;              
         double  sublimation;                                    /*  meters      */
         double  surface_heat_flux;                              /*  kJ/day      */
         double  PET;                                            /*  m water/day */

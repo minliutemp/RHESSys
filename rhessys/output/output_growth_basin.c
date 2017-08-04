@@ -124,16 +124,14 @@ void	output_growth_basin(
 			for (p=0; p< zone[0].num_patches; p++){
 				patch = zone[0].patches[p];
 				alitrn += (patch[0].litter_ns.litr1n + patch[0].litter_ns.litr2n
-					+ patch[0].litter_ns.litr3n + patch[0].litter_ns.litr4n)
+					+ patch[0].litter_ns.litr3n)
 					* patch[0].area;
-				asoiln += (patch[0].soil_ns.soil1n + patch[0].soil_ns.soil2n
-					+ patch[0].soil_ns.soil3n + patch[0].soil_ns.soil4n)
+				asoiln += (patch[0].soil_ns.soil1n + patch[0].soil_ns.soil2n)
 					* patch[0].area;
 				alitrc += (patch[0].litter_cs.litr1c + patch[0].litter_cs.litr2c
-					+ patch[0].litter_cs.litr3c + patch[0].litter_cs.litr4c)
+					+ patch[0].litter_cs.litr3c)
 					* patch[0].area;
-				asoilc += (patch[0].soil_cs.soil1c + patch[0].soil_cs.soil2c
-					+ patch[0].soil_cs.soil3c + patch[0].soil_cs.soil4c)
+				asoilc += (patch[0].soil_cs.soil1c + patch[0].soil_cs.soil2c)
 					* patch[0].area;
 				asminn += (patch[0].soil_ns.sminn) * patch[0].area;
 				anitrate += (patch[0].soil_ns.nitrate) * patch[0].area;

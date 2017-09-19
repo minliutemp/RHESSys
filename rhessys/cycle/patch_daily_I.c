@@ -62,6 +62,7 @@
 /*--------------------------------------------------------------*/
 #include <stdlib.h>
 #include "rhessys.h"
+#include "functions.h"
 
 void		patch_daily_I(
 						  struct	world_object *world,
@@ -124,18 +125,6 @@ void		patch_daily_I(
 	
 	double	compute_capillary_rise(
 		int,
-		double,
-		double,
-		double,
-		double,
-		double);
-
-
-	double  compute_potential_exfiltration(
-		int,
-		double,
-		double,
-		double,
 		double,
 		double,
 		double,
@@ -205,6 +194,8 @@ void		patch_daily_I(
 	}
 
 
+	patch[0].precip_with_assim = 0.0;
+
 	
 	/*-----------------------------------------------------*/
 	/*  Compute potential saturation for rootzone layer   */
@@ -246,7 +237,7 @@ void		patch_daily_I(
 	/*	compute new field capacity				*/
 	/*--------------------------------------------------------------*/
 
-	if (patch[0].sat_deficit_z < patch[0].rootzone.depth)  {
+	if (patch[0].sat_deficit_z <= patch[0].rootzone.depth)  {
 		patch[0].rootzone.field_capacity = compute_layer_field_capacity(
 			command_line[0].verbose_flag,
 			patch[0].soil_defaults[0][0].theta_psi_curve,
@@ -260,6 +251,14 @@ void		patch_daily_I(
 			patch[0].rootzone.depth, 0.0);				
 			
 		patch[0].field_capacity = 0.0;
+		if ( command_line[0].verbose_flag == -5 ){
+			printf("\n***PCHDAILYI CASE1: satdefz=%lf rzdepth=%lf rzFC=%lf FC=%lf",
+				   patch[0].sat_deficit_z,
+				   patch[0].rootzone.depth,
+				   patch[0].rootzone.field_capacity,
+				   patch[0].field_capacity);
+		}
+		
 	}
 	else  {
 		patch[0].rootzone.field_capacity = compute_layer_field_capacity(
@@ -284,7 +283,16 @@ void		patch_daily_I(
 			patch[0].soil_defaults[0][0].porosity_0,
 			patch[0].soil_defaults[0][0].porosity_decay,
 			patch[0].sat_deficit_z,
-			patch[0].sat_deficit_z, 0.0) - patch[0].rootzone.depth;
+			patch[0].sat_deficit_z, 0.0) - patch[0].rootzone.field_capacity;
+		
+		if ( command_line[0].verbose_flag == -5 ){
+			printf("\n***PCHDAILYI CASE2: satdefz=%lf rzdepth=%lf rzFC=%lf FC=%lf",
+				   patch[0].sat_deficit_z,
+				   patch[0].rootzone.depth,
+				   patch[0].rootzone.field_capacity,
+				   patch[0].field_capacity);
+		}
+		
 	}
 
 
@@ -322,36 +330,66 @@ void		patch_daily_I(
 	if ( patch[0].sat_deficit_z <= patch[0].soil_defaults[0][0].psi_air_entry ){
 		patch[0].potential_exfiltration = patch[0].potential_cap_rise;
 	}
-	else{
+	else {
 		if ( patch[0].soil_defaults[0][0].active_zone_z < patch[0].sat_deficit_z ){
 			/*--------------------------------------------------------------*/
 			/*	Estimate potential exfiltration from active zone 	*/
 			/*--------------------------------------------------------------*/
+			/* Added new check to see if non-zero root depth... was unintentionally */
+			/* zeroing out potential exfil in non-vegetated cases.	-AD				*/
+			if (patch[0].rootzone.depth > ZERO)	{
+				patch[0].potential_exfiltration = compute_potential_exfiltration(
+					command_line[0].verbose_flag,
+					patch[0].rootzone.S,
+					patch[0].soil_defaults[0][0].active_zone_z,
+					patch[0].soil_defaults[0][0].Ksat_0_v,
+					patch[0].soil_defaults[0][0].mz_v,
+					patch[0].soil_defaults[0][0].psi_air_entry,
+					patch[0].soil_defaults[0][0].pore_size_index,
+					patch[0].soil_defaults[0][0].porosity_decay,
+					patch[0].soil_defaults[0][0].porosity_0);
+				}
+			else {
 			patch[0].potential_exfiltration = compute_potential_exfiltration(
-				command_line[0].verbose_flag,
-				patch[0].rootzone.S,
-				patch[0].soil_defaults[0][0].active_zone_z,
-				patch[0].soil_defaults[0][0].Ksat_0_v,
-				patch[0].soil_defaults[0][0].mz_v,
-				patch[0].soil_defaults[0][0].psi_air_entry,
-				patch[0].soil_defaults[0][0].pore_size_index,
-				patch[0].soil_defaults[0][0].porosity_decay,
-				patch[0].soil_defaults[0][0].porosity_0);
+					command_line[0].verbose_flag,
+					patch[0].S,
+					patch[0].soil_defaults[0][0].active_zone_z,
+					patch[0].soil_defaults[0][0].Ksat_0_v,
+					patch[0].soil_defaults[0][0].mz_v,
+					patch[0].soil_defaults[0][0].psi_air_entry,
+					patch[0].soil_defaults[0][0].pore_size_index,
+					patch[0].soil_defaults[0][0].porosity_decay,
+					patch[0].soil_defaults[0][0].porosity_0);
+				}
 		}
 		else {
 			/*--------------------------------------------------------------*/
 			/*	Estimate potential exfiltration from active zone 	*/
 			/*--------------------------------------------------------------*/
-			patch[0].potential_exfiltration = compute_potential_exfiltration(
-				command_line[0].verbose_flag,
-				patch[0].rootzone.S,
-				patch[0].sat_deficit_z,
-				patch[0].soil_defaults[0][0].Ksat_0_v,
-				patch[0].soil_defaults[0][0].mz_v,
-				patch[0].soil_defaults[0][0].psi_air_entry,
-				patch[0].soil_defaults[0][0].pore_size_index,
-				patch[0].soil_defaults[0][0].porosity_decay,
-				patch[0].soil_defaults[0][0].porosity_0);
+			if (patch[0].rootzone.depth > ZERO)	{
+				patch[0].potential_exfiltration = compute_potential_exfiltration(
+					command_line[0].verbose_flag,
+					patch[0].rootzone.S,
+					patch[0].sat_deficit_z,
+					patch[0].soil_defaults[0][0].Ksat_0_v,
+					patch[0].soil_defaults[0][0].mz_v,
+					patch[0].soil_defaults[0][0].psi_air_entry,
+					patch[0].soil_defaults[0][0].pore_size_index,
+					patch[0].soil_defaults[0][0].porosity_decay,
+					patch[0].soil_defaults[0][0].porosity_0);
+				}
+			else {
+				patch[0].potential_exfiltration = compute_potential_exfiltration(
+					command_line[0].verbose_flag,
+					patch[0].S,
+					patch[0].sat_deficit_z,
+					patch[0].soil_defaults[0][0].Ksat_0_v,
+					patch[0].soil_defaults[0][0].mz_v,
+					patch[0].soil_defaults[0][0].psi_air_entry,
+					patch[0].soil_defaults[0][0].pore_size_index,
+					patch[0].soil_defaults[0][0].porosity_decay,
+					patch[0].soil_defaults[0][0].porosity_0);
+				}
 		}
 	}
 
@@ -418,7 +456,7 @@ void		patch_daily_I(
 	/*--------------------------------------------------------------*/
 	/*	Calculate effective patch lai from stratum					*/
 	/*	- for later use by zone_daily_F								*/
-	/*      Accumulate root biomass for patch soil -
+	/*      Accumulate root biomass for patch soil -		*/
 	/*      required for N updake from soil                         */
 	/*	also determine total plant carbon			*/
 	/*	- if grow option is specified				*/

@@ -33,8 +33,8 @@
 /*	double	psi_air_entry (Pa) -  air entry pressure.	*/
 /*	double	pore_size_index (DIM) - Brooks Corey pore size  */
 /*			index parameter.			*/
-/*	double 	p_0  (dim) - porosity  at surface 		*/
 /*	double 	p  (m-1) - porosity  decay rate 		*/
+/*	double 	p_0  (dim) - porosity  at surface 		*/
 /*								*/
 /*	DESCRIPTION						*/
 /*	Estimates the maximum possible rate of exfiltration of	*/
@@ -74,8 +74,8 @@ double	compute_potential_exfiltration(
 									   double	m_z,
 									   double	psi_air_entry,
 									   double	pore_size_index,
-									   double 	p_0,
-									   double	p)
+									   double 	p,
+									   double	p_0)
 {
 	/*--------------------------------------------------------------*/
 	/*	Local function declaration				*/
@@ -91,7 +91,7 @@ double	compute_potential_exfiltration(
 	/*--------------------------------------------------------------*/
 	/*	Estimate mean porosity.					*/
 	/*--------------------------------------------------------------*/
-	porosity_average = p * p_0 * (1-exp(-1*sat_deficit_z/p_0)) / sat_deficit_z;
+	porosity_average = p * p_0 * (1-exp(-1*sat_deficit_z/p)) / sat_deficit_z;
 	
 	/*--------------------------------------------------------------*/
 	/*	Estimate mean saturated conductivity.			*/
@@ -114,6 +114,16 @@ double	compute_potential_exfiltration(
 	wilting_point = exp(-1.0*log(2.5/psi_air_entry) 
 			* pore_size_index) * porosity_average;
 
+	if ( verbose_flag == -5 ){
+		printf("\n          COMPUTE POTENTIAL EXFIL: wilpt=%lf potexfil=%lf S=%lf porosity=%lf Ksatavg=%lf psi_ae=%lf b=%lf",
+			   wilting_point,
+			   potential_exfiltration,
+			   S,
+			   porosity_average,
+			   Ksat_average,
+			   psi_air_entry,
+			   pore_size_index);
+	}
 
 	potential_exfiltration = min(max((S-wilting_point)*porosity_average,0.0), potential_exfiltration);
 

@@ -184,10 +184,18 @@ int allocate_annual_growth(				int id,
          }
 
 	total_store =  cs->cpool;
-	total_biomass =  (cs->leafc+cs->frootc+cs->dead_stemc+cs->live_stemc+
-			cs->dead_crootc+cs->live_crootc);
+	
+	/* Changed to just be live C */
+	/*total_biomass =  (cs->leafc + cs->frootc + cs->live_stemc + cs->dead_stemc +
+			cs->live_crootc + cs->dead_crootc);*/
+	if (cs->cpool > ZERO) 
+	total_biomass =  (cs->leafc + cs->frootc + cs->live_stemc + cs->live_crootc + cs->cpool);
+	else
+	total_biomass =  (cs->leafc + cs->frootc + cs->live_stemc + cs->live_crootc);
 
-	total_above_biomass =  cs->leafc+cs->dead_stemc+cs->live_stemc;
+	/* Changed to just be live C */
+	/*total_above_biomass =  cs->leafc+cs->dead_stemc+cs->live_stemc;*/
+	total_above_biomass =  cs->leafc+cs->live_stemc;
 	
 	if (total_biomass > ZERO)
 		ratio = (total_store/total_biomass);
@@ -435,7 +443,7 @@ int allocate_annual_growth(				int id,
 	if ((cdf->leafc_store_to_leafc_transfer + cs->leafc) < epc.min_leaf_carbon) {
 		if (cs->num_resprout < epc.max_years_resprout) {
 
-		printf("\n Resprouting stratum %d", id);
+		//printf("\n Resprouting stratum %d", id);
 		cs->num_resprout += 1;
 		cs->age = 0;
 		cs->cpool = 0.0;
@@ -505,7 +513,7 @@ int allocate_annual_growth(				int id,
 		} /* end if resprout */
 	} /* end if less than min_leaf_carbon */
 	else  {
-		 cs->num_resprout = max(cs->num_resprout-1,0);	
+		 // cs->num_resprout = max(cs->num_resprout-1,0);	
 		 cs->age += 1;
 		 }
 

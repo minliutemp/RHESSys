@@ -177,6 +177,12 @@ void	execute_tec(
 		struct	command_line_object	*,
 		struct	date);
 	
+	void	execute_state_output_event(
+		struct world_object *,
+		struct date,
+		struct date,
+		struct command_line_object *);
+
 	/*--------------------------------------------------------------*/
 	/*	Local Variable Definition. 									*/
 	/*--------------------------------------------------------------*/
@@ -200,6 +206,7 @@ void	execute_tec(
 	/*--------------------------------------------------------------*/
 	/*	Initialize the tec event									*/
 	/*--------------------------------------------------------------*/
+	
 	event =  construct_tec_entry(world[0].end_date,"none");
 	
 	/*--------------------------------------------------------------*/
@@ -256,27 +263,45 @@ void	execute_tec(
 			/*--------------------------------------------------------------*/
 			/*			Simulate the world for the start of this day e		*/
 			/*--------------------------------------------------------------*/
+            if ( current_date.hour == 1 ) printf("Current_date year = %d mon = %d day = %d\r",
+                   current_date.year,current_date.month,current_date.day);
+            //fflush(stdout);
 			if ( current_date.hour == 1 ){
-				world_daily_I(
+                world_daily_I(
 					day,
 					world,
 					command_line,
 					event,
-					current_date);
+                    current_date);
 			} /*end if*/
 			/*--------------------------------------------------------------*/
 			/*          Do hourly stuff for the day.                        */
 			/*--------------------------------------------------------------*/
-			world_hourly( world,
+            world_hourly( world,
 				command_line,
 				event,
-				current_date);
+                current_date);
 			
 			/*--------------------------------------------------------------*/
 			/*			Perform any requested hourly output					*/
 			/*--------------------------------------------------------------*/
-			if (command_line[0].output_flags.hourly == 1)
-				execute_hourly_output_event(world,command_line,current_date,outfile);
+			if (command_line[0].output_flags.hourly == 1){
+				execute_hourly_output_event(
+							  world,
+							  command_line,
+							  current_date,
+							  outfile);
+			}
+
+			if(command_line[0].output_flags.hourly_growth ==1 &&
+					(command_line[0].grow_flag > 0) ){
+				  execute_hourly_growth_output_event(
+							      world, 
+							      command_line, 
+							      current_date, 
+							      growth_outfile);
+				  
+				};
 			/*--------------------------------------------------------------*/
 			/*			Increment to the next hour.							*/
 			/*--------------------------------------------------------------*/
@@ -288,13 +313,12 @@ void	execute_tec(
 				/*--------------------------------------------------------------*/
 				/*			Simulate the world for the end of this day e		*/
 				/*--------------------------------------------------------------*/
-				world_daily_F(
+                world_daily_F(
 					day,
 					world,
 					command_line,
 					event,
-					current_date);
-			        // printf("%s\n","finish_daily_simulation");	
+                    current_date);
 				/*--------------------------------------------------------------*/
 				/*			Perform any requested daily output					*/
 				/*--------------------------------------------------------------*/
@@ -307,13 +331,22 @@ void	execute_tec(
 						growth_outfile);
 				}
 				if (command_line[0].output_flags.daily == 1) {
-                                                //printf("%s\n","before_daily_output");
 						execute_daily_output_event(
 						world,
 						command_line,
 						current_date,
 						outfile);
                                }
+				/*--------------------------------------------------------------*/
+        /*  Output world state in spinup mode if targets met            */
+				/*--------------------------------------------------------------*/
+
+				if((command_line[0].vegspinup_flag > 0) && (world[0].target_status > 0)) {
+		      execute_state_output_event(world, current_date, world[0].end_date,command_line);
+          printf("\nSpinup completed YEAR %d MONTH %d DAY %d \n", current_date.year,current_date.month,current_date.day);
+          exit(0);
+        } 
+
 				/*--------------------------------------------------------------*/
 				/*			Perform any requested yearly output					*/
 				/*--------------------------------------------------------------*/
@@ -395,7 +428,7 @@ void	execute_tec(
 				/*--------------------------------------------------------------*/
 				/*				increment year  								*/
 				/*-------------------------------------------------------------*/
-				printf("Year %d\n", current_date.year);
+                printf("\nYear %d\n", current_date.year);
 				year = year + 1;
 				current_date.year= next_date.year;
 			}  /*end if*/

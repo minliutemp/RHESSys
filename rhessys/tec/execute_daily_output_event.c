@@ -46,7 +46,7 @@ void	execute_daily_output_event(
 	/*--------------------------------------------------------------*/
 	/*	Local function definition.									*/
 	/*--------------------------------------------------------------*/
-	void output_24hours_basin(
+	void output_basin(
 		int,
 		struct	basin_object *,
 		struct	date,
@@ -70,6 +70,11 @@ void	execute_daily_output_event(
 		FILE	*);
 	
 	void output_canopy_stratum(
+		int, int, int, int,
+		struct	canopy_strata_object *,
+		struct	date,
+		FILE	*);
+	void output_shadow_strata(
 		int, int, int, int,
 		struct	canopy_strata_object *,
 		struct	date,
@@ -121,7 +126,7 @@ void	execute_daily_output_event(
 			if ( command_line[0].b != NULL ){
 				basinID = command_line[0].b->basinID;
 				if (( world[0].basins[b][0].ID == basinID) || (basinID == -999))
-					output_24hours_basin(
+					output_basin(
 					command_line[0].routing_flag,
 					world[0].basins[b],
 					date,
@@ -192,7 +197,7 @@ void	execute_daily_output_event(
 								/*---------------------------------------------------*/
 								for(p=0;
 								p < world[0].basins[b][0].hillslopes[h][0].zones[z][0].num_patches;
-								++p){
+								++p){									
 									/*-------------------------------------------------*/
 									/*	Construct the patch output files.					*/
 									/*-------------------------------------------------*/
@@ -243,7 +248,7 @@ void	execute_daily_output_event(
 														if (( world[0].basins[b][0].hillslopes[h][0].zones[z][0].patches[p][0].ID == patchID)
 															||	(patchID == -999))
 															if (( world[0].basins[b][0].hillslopes[h][0].zones[z][0].patches[p][0].canopy_strata[c][0].ID == stratumID)
-																|| (stratumID == -999))
+																|| (stratumID == -999)) {
 																output_canopy_stratum(
 																world[0].basins[b][0].ID,
 																world[0].basins[b][0].hillslopes[h][0].ID,
@@ -251,6 +256,7 @@ void	execute_daily_output_event(
 																world[0].basins[b][0].hillslopes[h][0].zones[z][0].patches[p][0].ID,
 																world[0].basins[b]->hillslopes[h]->zones[z]->patches[p]->canopy_strata[c],
 																date, outfile->canopy_stratum->daily);
+															}
 										} /* end stratum (c) for loop */
 									} /* end if options */
 								} /* end patch (p) for loop */

@@ -36,6 +36,9 @@ int resolve_sminn_competition(
 							  struct  soil_n_object   *ns_soil,
 							  double surface_NO3,
 							  double surface_NH4,
+							  double rooting_depth,
+							  double active_zone_z,
+							  double N_decay_rate,
 							  struct ndayflux_patch_struct *ndf)
 {
 	/*------------------------------------------------------*/
@@ -46,13 +49,25 @@ int resolve_sminn_competition(
 	/*	Local Variable Definition. 							*/
 	/*------------------------------------------------------*/
 	double sum_ndemand, sum_avail;
-	double actual_immob, actual_uptake;
+	double actual_immob, actual_uptake, perc_inroot;
 	/*--------------------------------------------------------------*/
 	/* compare the combined decomposition immobilization and plant*/
 	/*growth N demands against the available soil mineral N pool. */
 	/*--------------------------------------------------------------*/
 	sum_ndemand = ndf->plant_potential_ndemand + ndf->potential_immob;
 	sum_avail = max(ns_soil->sminn + ns_soil->nitrate + ndf->mineralized, 0.0);
+	/*--------------------------------------------------------------*/
+	/* limit available N for plants by rooting depth		*/
+	/* for really small rooting depths this can be problematic	*/
+	/* for now provide a minimum access				*/
+	/*--------------------------------------------------------------*/
+	perc_inroot = (1.0-exp(-N_decay_rate * rooting_depth)) /
+			(1.0 - exp(-N_decay_rate * active_zone_z));
+	perc_inroot = min(perc_inroot,1.0);
+	if (rooting_depth > ZERO)
+		perc_inroot = max(0.1, perc_inroot);
+
+	sum_avail = perc_inroot * sum_avail;
 
 	if (sum_ndemand <= sum_avail){
 	/* N availability is not limiting immobilization or plant

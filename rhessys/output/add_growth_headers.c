@@ -2,11 +2,9 @@
 /* 																*/
 /*					add_growth_headers					*/
 /*																*/
-/*	add_growth_headers - 
-/*																*/
+/*	add_growth_headers - 												    	*/
 /*	NAME														*/
-/*	add_growth_headers 
-/*																*/
+/*	add_growth_headers    													*/
 /*	SYNOPSIS													*/
 /*	void add_growth_headers(struct world output_file_object *,				*/
 /*			struct command_line_object *)					*/
@@ -43,11 +41,59 @@ void add_growth_headers(struct world_output_file_object *world_output_files,
 	/*--------------------------------------------------------------*/
 
 	if (command_line[0].b != NULL) {
+
+	/*--------------------------------------------------------------*/
+	/*	Hourly							*/
+	/*--------------------------------------------------------------*/
+	outfile = world_output_files[0].basin[0].hourly;
+	fprintf(outfile,"%s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s\n" ,
+		"hour",
+		"day",
+		"month",
+		"year",
+		"basinID",
+		//"lai",
+		//"gpsn",
+		//"plant_resp",
+		//"soil_resp",
+		//"nitrate",
+		//"sminn",
+		//"surfaceN",
+		//"plantc",
+		//"plantn",
+		//"npool",
+		//"litrc",
+		//"litrn",
+		//"soilc",
+		//"soiln",
+		"gwNO3",
+		"gwNH4",
+		"gwDON",
+		"gwDOC",
+		"streamflow_NO3",
+		"streamflow_NH4",
+		"streamflow_DON",
+		"streamflow_DOC",
+		"gwNO3out",
+		"gwNH4out",
+		"gwDONout",
+		"gwDOCout",
+		//"denitrif",
+		//"nitrif",
+		//"DOC",
+		//"DON",
+		//"root_depth",
+		//"nfix",
+		//"nuptake",
+		//"grazingC",
+		"StreamNO3_from_surface",
+		"StreamNO3_from_sub");	  
 	/*--------------------------------------------------------------*/
 	/*	Daily 							*/
 	/*--------------------------------------------------------------*/
 	outfile = world_output_files[0].basin[0].daily;
-	fprintf(outfile,"%s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s\n" ,
+
+	fprintf(outfile,"%s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s\n" ,
 		"day",
 		"month",
 		"year",
@@ -61,6 +107,7 @@ void add_growth_headers(struct world_output_file_object *world_output_files,
 		"surfaceN",
 		"plantc",
 		"plantn",
+		"cpool",
 		"npool",
 		"litrc",
 		"litrn",
@@ -81,7 +128,13 @@ void add_growth_headers(struct world_output_file_object *world_output_files,
 		"denitrif",
 		"nitrif",
 		"DOC",
-		"DON","root_depth","nfix","nuptake","grazingC");
+		"DON",
+		"root_depth",
+		"nfix",
+		"nuptake",
+		"grazingC",
+		"StreamNO3_from_surface",
+		"StreamNO3_from_sub", "N_dep","fertilizer_store");
 	/*--------------------------------------------------------------*/
 	/*	Yearly 							*/
 	/*--------------------------------------------------------------*/
@@ -106,7 +159,8 @@ void add_growth_headers(struct world_output_file_object *world_output_files,
 	/*	Daily 							*/
 	/*--------------------------------------------------------------*/
 	outfile = world_output_files[0].hillslope[0].daily;
-	fprintf(outfile,"%s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s \n" ,
+
+	fprintf(outfile,"%s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s\n" ,
 		"day",
 		"month",
 		"year",
@@ -120,6 +174,7 @@ void add_growth_headers(struct world_output_file_object *world_output_files,
 		"surfaceN",
 		"plantc",
 		"plantn",
+		"cpool",
 		"npool",
 		"litrc",
 		"litrn",
@@ -140,7 +195,13 @@ void add_growth_headers(struct world_output_file_object *world_output_files,
 		"denitrif",
 		"nitrif",
 		"DOC",
-		"DON","root_depth");
+		"DON",
+		"root_depth",
+		"nfix",
+		"nuptake",
+		"grazingC",
+		"StreamNO3_from_surface",
+		"StreamNO3_from_sub");
 	}
 
 	/*--------------------------------------------------------------*/
@@ -177,7 +238,7 @@ void add_growth_headers(struct world_output_file_object *world_output_files,
 	/*	Daily 							*/
 	/*--------------------------------------------------------------*/
 	outfile = world_output_files[0].patch[0].daily;
-	check = fprintf(outfile,"%s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s\n",
+	check = fprintf(outfile,"%s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s\n",
 		"day",
 		"month",
 		"year",
@@ -187,6 +248,7 @@ void add_growth_headers(struct world_output_file_object *world_output_files,
 		"patchID",
 		"lai",
 		"plantc",
+		"plantn",
 		"net_psn",
 		"plant_resp",
 		"soil_resp",
@@ -288,6 +350,46 @@ void add_growth_headers(struct world_output_file_object *world_output_files,
 		"gresp",
 		"psn_to_cpool","age","root_depth","gwseasonday","lfseasonday","gsi", "nlimit",
 		"fleaf","froot","fwood","Nuptake","smin2pl","retrans2pl","mort_fract");
+
+  /*--------------------------------------------------------------*/
+	/* Shadow	Daily 			                                   				*/
+	/*--------------------------------------------------------------*/
+	if (command_line[0].vegspinup_flag > 0){
+    outfile = world_output_files[0].shadow_strata[0].daily;
+	  fprintf(outfile,
+	  	"%s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s\n" ,
+	  	"day",
+	  	"month",
+	  	"year",
+	  	"basinID",
+		  "hillID  ",
+		  "zoneID  ",
+		  "patchID  ",
+		  "stratumID  ",
+		  "proj_lai  ",
+		  "leafc  ",
+		  "leafn  ",
+		  "cpool  ",
+		  "npool  ",
+		  "dead_leafc  ",
+		  "frootc  ",
+		  "frootn  ",
+		  "live_stemc  ",
+		  "live_stemn  ",
+		  "leafc_store  ",
+		  "leafn_store  ",
+		  "dead_stemc  ",
+		  "dead_stemn  ",
+		  "live_crootc  ",
+		  "live_crootn  ",
+		  "dead_crootc  ",
+		  "dead_crootn  ",
+		  "cwdc  ",
+		  "mresp  ",
+		  "gresp  ",
+		  "psn_to_cpool","age","root_depth","gwseasonday","lfseasonday","gsi", "nlimit",
+		  "fleaf","froot","fwood","Nuptake","smin2pl","retrans2pl","mort_fract");
+  }
 
 	/*--------------------------------------------------------------*/
 	/*	Yearly 							*/

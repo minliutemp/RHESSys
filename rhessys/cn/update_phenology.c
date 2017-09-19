@@ -136,6 +136,7 @@ void update_phenology(struct zone_object  *zone,
 	
 	double compute_growingseason_index(
 		struct zone_object *,
+	 	struct epvar_struct	*epv ,
 		struct epconst_struct
 		);
 		
@@ -157,30 +158,37 @@ void update_phenology(struct zone_object  *zone,
 	frootlitfallc = 0.0;
 	litfall_flag = 0;
 	day = yearday(current_date);
+
+
+ /*--------------------------------------------------------------*/
+ /* static phenology                      */  
+ /*--------------------------------------------------------------*/
+
 	
-	if (epc.phenology_flag == STATIC) {
-	if (phen->expand_startday < phen->expand_stopday) {
-		if ((day >= phen->expand_startday) && (day < phen->expand_stopday))
-			expand_flag = 1;
-		}
-	else {
-		if ((day >= phen->expand_startday) || (day < phen->expand_stopday))
-			expand_flag = 1;
+  if (epc.phenology_flag == STATIC) {
+
+
+	if (day == phen->expand_startday){ 
+		expand_flag = 1;
+		phen->gwseasonday = 1;
+		phen->lfseasonday = -1;
 	}
 
-		if (phen->litfall_startday < phen->litfall_stopday) {
-		if ((day >= phen->litfall_startday) && (day < phen->litfall_stopday))
-			litfall_flag = 1;
+	else if (day == phen->litfall_startday){ 
+		litfall_flag = 1;
+		phen->lfseasonday = 1;
+		phen->gwseasonday = -1;
 	}
-	else if (phen->litfall_startday == phen->litfall_stopday) {
-		if (day != phen->litfall_stopday)
-			litfall_flag = 1;
+
+	else if (phen->gwseasonday > -1 && phen->gwseasonday <= epc.ndays_expand){ 
+		expand_flag = 1;
 	}
-	else if (phen->litfall_startday > phen->litfall_stopday) {
-		if ((day >= phen->litfall_startday) || (day < phen->litfall_stopday))
-			litfall_flag = 1;
+
+	else if (phen->lfseasonday > -1 && phen->lfseasonday <= epc.ndays_litfall){ 
+		litfall_flag = 1;
 	}
-	}
+
+  }
 	
  /*--------------------------------------------------------------*/
   /* dynamic phenology                      */  
@@ -188,15 +196,15 @@ void update_phenology(struct zone_object  *zone,
 
   else {
 
-  phen->gsi = compute_growingseason_index(zone, epc);
+  phen->gsi = compute_growingseason_index(zone, epv, epc);
+  
   
 
 
   /* first are we before last possible date for leaf onset */
-  if (day < epc.day_leafon) {
     /* are we already in a leaf onset condition */
       if (phen->gwseasonday > -1 ) { 
-          if  (phen->gwseasonday < epc.ndays_expand)
+          if  (phen->gwseasonday <= epc.ndays_expand)
               expand_flag=1;
           }   
       else if (phen->gsi > 0.5) {
@@ -205,84 +213,45 @@ void update_phenology(struct zone_object  *zone,
           expand_flag=1;
           phen->expand_startday = day;
           phen->expand_stopday = day + epc.ndays_expand;
-          phen->litfall_startday = epc.day_leafoff;
-          phen->litfall_stopday = phen->litfall_startday + epc.ndays_litfall;
-
           }   
-      }   
-  else {    
-       /* if we are after the last possible date for leaf onset */
-    /* trigger leaf on if needed              */  
-    if ((phen->gwseasonday < 0) && (phen->lfseasonday < 0)&& (phen->gsi >0.5)) {
-                    phen->gwseasonday = 1;
-          expand_flag=1;
-          phen->expand_startday = day;
-          phen->expand_stopday = day + epc.ndays_expand;
-          }   
- }
 
 /* now determine if we are before the last possible date of leaf drop */
-  if (day < epc.day_leafoff) {
      
       /* are we already in a leaf offset */
       if (phen->lfseasonday > -1 ) { 
 
           phen->gwseasonday = -1; 
      
-
-          if  (phen->lfseasonday < epc.ndays_litfall)
+          if  (phen->lfseasonday <= epc.ndays_litfall)
               litfall_flag=1;
-
-          }   
-      else if ((phen->gsi < 0.5) && (phen->gwseasonday > 0) && (day > phen->expand_stopday)) {
+          }
+ 
+	else if ((phen->gsi < 0.5) && (phen->gwseasonday > epc.ndays_expand)){
                 phen->lfseasonday = 1;
           phen->gwseasonday = -1; 
           litfall_flag=1;
           phen->litfall_startday = day;
           phen->litfall_stopday = day + epc.ndays_litfall;
-
-          }   
-      }   
-    
-  else {   
-    
-    if ((day == epc.day_leafoff) && (phen->lfseasonday < 0) ){
-        phen->lfseasonday = 0;
-          phen->litfall_startday = day;
-          phen->litfall_stopday = day + epc.ndays_litfall;
-          }   
+	  }   
 
 
-                if  (phen->lfseasonday < epc.ndays_litfall) {
-                                       litfall_flag=1;
-          phen->gwseasonday = -1; 
-    }
-    else {
-        phen->lfseasonday = -1;
-        phen->gwseasonday = -1;
-    }
-  }
- 
-  if (phen->gwseasonday > 0)
-      phen->gwseasonday += 1;
-  if (phen->lfseasonday >=0)
-      phen->lfseasonday += 1;
 
   } /* end dynamic phenology set up */
-
+    
 
 	
 	phen->daily_allocation = epc.alloc_prop_day_growth;
 	phen->annual_allocation = 0;
+	if (((cs->frootc + cs->frootc_transfer + cs->frootc_store) < ZERO) && (epc.phenology_flag != STATIC)) {
+		printf("\n calling annual allocation because fine roots are zero %lf %lf %lf", cs->frootc, cs->frootc_transfer, cs->frootc_store);
+		phen->annual_allocation=1;} 
 	/*--------------------------------------------------------------*/
 	/*	Leaf expansion - spring leaf out			*/
 	/*--------------------------------------------------------------*/
 
 	if (expand_flag == 1) {
-		if (day <= phen->expand_stopday) 
-			remdays_transfer = max(1.0,(phen->expand_stopday - day));
-		else
-			remdays_transfer = max(1.0,(phen->expand_stopday + 365 - day));
+
+		remdays_transfer = max(1.0,(epc.ndays_expand + 1 - phen->gwseasonday));
 
 	
 		cdf->leafc_transfer_to_leafc = 2.0*cs->leafc_transfer / remdays_transfer;
@@ -316,7 +285,7 @@ void update_phenology(struct zone_object  *zone,
 	/*--------------------------------------------------------------*/
 	/* at beginning of litter fall figure out how much to drop */
 	/*--------------------------------------------------------------*/
-	if (day == phen->litfall_startday)  {
+	if (phen->lfseasonday == 1)  {
 		ok = compute_annual_litfall(epc, phen, cs, grow_flag);
 	}
 
@@ -324,10 +293,8 @@ void update_phenology(struct zone_object  *zone,
 	/*	compute daily litter fall				*/
 	/*--------------------------------------------------------------*/
 	if (litfall_flag == 1) {
-		if (day <= phen->litfall_stopday) 
-			remdays_transfer = (phen->litfall_stopday - day);
-		else
-			remdays_transfer = phen->litfall_stopday + 365 - day;
+		remdays_transfer = max(1.0,(epc.ndays_litfall + 1 - phen->lfseasonday));
+
 		leaflitfallc = 2.0*phen->leaflitfallc / remdays_transfer;
 		if (leaflitfallc > cs->leafc)
 			leaflitfallc = cs->leafc;
@@ -341,7 +308,7 @@ void update_phenology(struct zone_object  *zone,
 	/*	this is also considered to be the end of the growing season */
 	/*	so do annual allcation					*/
 	/*--------------------------------------------------------------*/
-	 if (( day == phen->litfall_stopday) ){
+	if (phen->lfseasonday == epc.ndays_litfall){
 		if (epc.phenology_type == DECID) {
 			leaflitfallc = cs->leafc;
 			phen->daily_allocation = 0;
@@ -632,11 +599,14 @@ void update_phenology(struct zone_object  *zone,
 	/*--------------------------------------------------------------*/
 	/*	keep a seasonal max_lai for outputing purposes		*/
 	/*--------------------------------------------------------------*/
-	if (day == phen->expand_startday )
+	if (phen->gwseasonday == 1){
 		epv->max_proj_lai = 0.0;
-	if ((day >= phen->expand_startday) && (day < phen->litfall_startday))
-		if (epv->proj_lai > epv->max_proj_lai)
+	}
+	if (phen->gwseasonday > 1){
+		if (epv->proj_lai > epv->max_proj_lai){
 			epv->max_proj_lai = epv->proj_lai;
+		}
+	}
 	/*--------------------------------------------------------------*/
 	/*	update litter interception capacity			*/
 	/*--------------------------------------------------------------*/
@@ -646,6 +616,13 @@ void update_phenology(struct zone_object  *zone,
 		cs_litr,
 		litter);
 
+
+
+	/* Advances seasonday variables */
+	  if (phen->gwseasonday > 0)
+	      phen->gwseasonday += 1;
+	  if (phen->lfseasonday > 0)
+	      phen->lfseasonday += 1;
 	
 
 	return;

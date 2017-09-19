@@ -192,7 +192,11 @@ double	compute_z_final(
 				}
 			}
 			else
-				z_final =  (z_initial - delta_water/p_0);
+				{if ((-delta_water/p_0)>soil_depth) // should compare with soil_depth here
+					z_final=soil_depth;
+				else
+					z_final =  (0 - delta_water/p_0); // should be 0 because start from surface, z=0
+				} 
 		}
 	}
 	/*--------------------------------------------------------------*/
@@ -237,5 +241,9 @@ double	compute_z_final(
 		}
 	}
 	
+	/* CAN GO SLIGHTLY BELOW SOIL DEPTH AND CAUSING INSTABILITY, SO CAPPING */
+	z_final = min(z_final,soil_depth);
+	
 	return(z_final);
 } /*compute_z_final*/
+

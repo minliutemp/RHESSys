@@ -68,7 +68,7 @@ struct	command_line_object	*construct_command_line(
 	/*--------------------------------------------------------------*/
 	command_line[0].gridded_ascii_flag = 0;
 	command_line[0].gridded_netcdf_flag = 0;
-	command_line[0].grow_flag = 0;
+	command_line[0].grow_flag = 0;	
 	command_line[0].std_scale = 0;
 	command_line[0].stdev_flag = 0;
 	command_line[0].road_flag = 1;
@@ -78,6 +78,7 @@ struct	command_line_object	*construct_command_line(
 	command_line[0].surface_routing_flag = 0;
 	command_line[0].stream_routing_flag = 0;
 	command_line[0].reservoir_operation_flag = 0;
+	command_line[0].clim_repeat_flag = 0;
 	command_line[0].dclim_flag = 0;
 	command_line[0].ddn_routing_flag = 0;
 	command_line[0].tec_flag = 0;
@@ -93,7 +94,10 @@ struct	command_line_object	*construct_command_line(
 	command_line[0].noredist_flag = 0;
 	command_line[0].surface_energy_flag = 0;
 	command_line[0].firespread_flag = 0;
+	command_line[0].vegspinup_flag = 0;		
 	command_line[0].vgsen_flag = 0;
+	command_line[0].FillSpill_flag=0;	
+	command_line[0].evap_use_longwave_flag = 0;
 	command_line[0].veg_sen1 = 1.0;
 	command_line[0].veg_sen2 = 1.0;
 	command_line[0].veg_sen3 = 1.0;
@@ -106,6 +110,7 @@ struct	command_line_object	*construct_command_line(
 	command_line[0].sen[SOIL_DEPTH] = 1.0;
 	command_line[0].prev_flag = 0;
 	command_line[0].gw_flag = 0;
+	command_line[0].gwtoriparian_flag = 0;
 	command_line[0].tchange_flag = 0;
 	command_line[0].tmax_add = 0.0;
 	command_line[0].tmin_add = 0.0;
@@ -126,7 +131,7 @@ struct	command_line_object	*construct_command_line(
 	command_line[0].snow_scale_tol = 999999999;
 	
 	/*-------------------------------------------------*/
-	/*	Loop through each arguement in the command line.*/
+	/* Loop through each arguement in the command line.*/
 	/*-------------------------------------------------*/
 	i = 1;
 	while  ( i < main_argc){
@@ -138,7 +143,7 @@ struct	command_line_object	*construct_command_line(
 			++i;
 		}
 		/*------------------------------------------*/
-		/*		Check if the verbose flag is next.    */
+		/*	Check if the verbose flag is next.  */
 		/*------------------------------------------*/
 		if ( i< main_argc ){
 			if ( strcmp(main_argv[i],"-v") == 0 ){
@@ -201,6 +206,13 @@ struct	command_line_object	*construct_command_line(
 			/*------------------------------------------*/
 			/*Check if the distributed climate flag is next.           */
 			/*------------------------------------------*/
+			else if ( strcmp(main_argv[i],"-climrepeat") == 0 ){
+				command_line[0].clim_repeat_flag = 1;
+				i++;
+			}
+			/*------------------------------------------*/
+			/*Check if the distributed climate flag is next.           */
+			/*------------------------------------------*/
 			else if ( strcmp(main_argv[i],"-dclim") == 0 ){
 				command_line[0].dclim_flag = 1;
 				i++;
@@ -249,18 +261,17 @@ struct	command_line_object	*construct_command_line(
 			/*	fire spread option and coeffcients	  */
 			/*-------------------------------------------------*/
 			else if ( strcmp(main_argv[i],"-firespread") == 0 ){
-				i++;
 				printf("\n Running with FIRE SPREAD turned on");
 				command_line[0].firespread_flag = 1;
-				if ((i == main_argc-1) || (valid_option(main_argv[i])==1)){
-					fprintf(stderr,"FATAL ERROR: Values for fire grid parameters not specified\n");
-					exit(EXIT_FAILURE);
-				} /*end if*/
+				i++;
+				command_line[0].fire_grid_res = 30;
 				/*-------------------------------*/
 				/*Read in the fire spread grid parameters		*/
 				/*-------------------------------*/
-				command_line[0].fire_grid_res = (double)atof(main_argv[i]);
-				i++;
+				if (  (i != main_argc) && (valid_option(main_argv[i])==0) ){
+					command_line[0].fire_grid_res = (double)atof(main_argv[i]);
+					i++;
+				}/*end if*/
 			}/* end if */
 
 			/*-------------------------------------------------*/
@@ -274,6 +285,30 @@ struct	command_line_object	*construct_command_line(
 					fprintf(stderr,"FATAL ERROR: Values for fire grid parameters not specified\n");
 					exit(EXIT_FAILURE);
 				} /*end if*/
+			}/* end if */
+
+			/*------------------------------------------*/
+			/*Check if spinup flag next.                */
+			/*------------------------------------------*/
+			else if ( strcmp(main_argv[i],"-vegspinup") == 0 ){
+				printf("\n Running with SPINUP turned on \n");
+				command_line[0].vegspinup_flag = 1;
+				i++;
+     
+      	/*--------------------------------------------------------------*/
+				/*			Read in the vegspinup file name.						          	*/
+				/*--------------------------------------------------------------*/
+				strncpy(command_line[0].vegspinup_filename, main_argv[i], FILEPATH_LEN);
+				i++;
+      }
+
+			/*-------------------------------------------------*/
+			/*	routing gw to riparian option */
+			/*-------------------------------------------------*/
+			else if ( strcmp(main_argv[i],"-gwtoriparian") == 0 ){
+				i++;
+				printf("\n Running with hillslope gw routed to riparian areas\n ");
+				command_line[0].gwtoriparian_flag = 1;
 			}/* end if */
 			/*-------------------------------------------------*/
 			/*	groundwater flag and coeffcients	  */
@@ -1051,6 +1086,10 @@ struct	command_line_object	*construct_command_line(
 				} /*end if*/
 			else if (strcmp(main_argv[i],"-netcdfgrid") == 0 ){
 				command_line[0].gridded_netcdf_flag = 1;
+				i++;
+			}
+			else if (strcmp(main_argv[i], "-longwaveevap") == 0) {
+				command_line[0].evap_use_longwave_flag = 1;
 				i++;
 			}
 			/*--------------------------------------------------------------*/

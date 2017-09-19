@@ -1,12 +1,42 @@
-PGM  = rhessys5.18.r2
-VERSION = 5.18.r2
+VERSION = 5.20.1
+PGM  = rhessys$(VERSION)
 CC = gcc 
-#CFLAGS = -O -std=c99
-CFLAGS = -g -std=c99
+INCLUDES = -Iinclude
+
 RHESSYS_BIN = /usr/local/bin
 OBJ = objects
 
+#netcdf ?=FALSE
+#wmfire ?=FALSE
+
+DEFINES       = -DLIU_NETCDF_READER -DCHECK_NCCLIM_DATA -DFIND_STATION_BASED_ON_ID 
+CFLAGS =-Wall -g -std=c99 -fopenmp -O2 $(DEFINES)
+
+# Retro fitting from CF
+ifeq ($(OS), Darwin)
+	CFLAGS_TESTS = `pkg-config --cflags glib-2.0` -g -Wall -Wmacro-redefined -std=c99
+else ifeq ($(OS), Linux)
+	CFLAGS_TESTS = `pkg-config --cflags glib-2.0` -g -Wall -std=c99
+else
+	CFLAGS_TESTS = `pkg-config --cflags glib-2.0` -g -Wall -std=c99
+endif
+
+LDLIBS_TESTS = `pkg-config --libs glib-2.0` -lm
+
+SRCS := $(shell find clim cn cycle hydro init rad tec util -name '*.c')
+OBJDIR := OBJ
+
+TESTS_ROOTDIR = test
+SRCDIR_TESTS = $(TESTS_ROOTDIR)/src
+SRCS_TESTS := $(shell find $(SRCDIR_TESTS) -name '*.c')
+TESTSDIR = $(TESTS_ROOTDIR)
+OBJDIR_TESTS = $(TESTS_ROOTDIR)/objects
+OBJECTS_TESTS := $(patsubst $(SRCDIR_TESTS)/%.c,$(OBJDIR_TESTS)/%.o,$(SRCS_TESTS))
+TESTS := $(patsubst $(SRCDIR_TESTS)/%.c,$(OBJDIR_TESTS)/%,$(SRCS_TESTS))
+TESTS_TO_RUN = $(shell find $(TESTS_ROOTDIR) -type f -perm +111 -maxdepth 1)
+
 OS := $(shell uname)
+
 
 OBJECTS = \
 $(OBJ)/Ksat_z_curve.o \
@@ -16,6 +46,7 @@ $(OBJ)/alloc.o \
 $(OBJ)/allocate_annual_growth.o \
 $(OBJ)/allocate_daily_growth.o \
 $(OBJ)/assign_base_station.o \
+$(OBJ)/assign_base_station_xy.o \
 $(OBJ)/assign_neighbours.o \
 $(OBJ)/basin_daily_F.o \
 $(OBJ)/basin_daily_I.o \
@@ -28,6 +59,7 @@ $(OBJ)/canopy_stratum_growth.o \
 $(OBJ)/canopy_stratum_hourly.o \
 $(OBJ)/check_zero_stores.o \
 $(OBJ)/compute_Lstar.o \
+$(OBJ)/compute_Lstar_canopy.o \
 $(OBJ)/compute_N_leached.o \
 $(OBJ)/compute_N_absorbed.o \
 $(OBJ)/compute_annual_litfall.o \
@@ -59,6 +91,7 @@ $(OBJ)/compute_nonvascular_stratum_conductance.o \
 $(OBJ)/compute_potential_N_uptake.o \
 $(OBJ)/compute_potential_N_uptake_Dickenson.o \
 $(OBJ)/compute_potential_N_uptake_Waring.o \
+$(OBJ)/compute_potential_N_uptake_combined.o \
 $(OBJ)/compute_potential_decomp.o \
 $(OBJ)/compute_potential_exfiltration.o \
 $(OBJ)/compute_potential_rain_interception.o \
@@ -70,6 +103,7 @@ $(OBJ)/compute_ra_understory.o \
 $(OBJ)/compute_radiative_fluxes.o \
 $(OBJ)/compute_rain_stored.o \
 $(OBJ)/compute_return_flow.o \
+$(OBJ)/compute_saturation_vapor_pressure.o \
 $(OBJ)/compute_varbased_returnflow.o \
 $(OBJ)/compute_varbased_flow.o \
 $(OBJ)/compute_snow_stored.o \
@@ -84,6 +118,7 @@ $(OBJ)/compute_subsurface_temperature_profile.o \
 $(OBJ)/compute_toc_wind.o \
 $(OBJ)/compute_transmissivity_curve.o \
 $(OBJ)/compute_unsat_zone_drainage.o \
+$(OBJ)/compute_vapor_pressure_deficit.o \
 $(OBJ)/compute_vapour_conductance.o \
 $(OBJ)/compute_vascular_stratum_conductance.o \
 $(OBJ)/compute_year_day.o \
@@ -113,6 +148,9 @@ $(OBJ)/construct_ddn_routing_topology.o \
 $(OBJ)/construct_surface_energy_defaults.o \
 $(OBJ)/construct_fire_defaults.o \
 $(OBJ)/construct_soil_defaults.o \
+$(OBJ)/construct_spinup_thresholds.o \
+$(OBJ)/construct_spinup_defaults.o \
+$(OBJ)/construct_empty_shadow_strata.o \
 $(OBJ)/construct_stratum_defaults.o \
 $(OBJ)/construct_tec.o \
 $(OBJ)/construct_tec_entry.o \
@@ -143,6 +181,7 @@ $(OBJ)/destroy_zone_defaults.o \
 $(OBJ)/execute_daily_growth_output_event.o \
 $(OBJ)/execute_daily_output_event.o \
 $(OBJ)/execute_hourly_output_event.o \
+$(OBJ)/execute_hourly_growth_output_event.o \
 $(OBJ)/execute_monthly_output_event.o \
 $(OBJ)/execute_redefine_strata_event.o \
 $(OBJ)/execute_redefine_world_event.o \
@@ -185,9 +224,8 @@ $(OBJ)/leaf_conductance_tavg_curve.o \
 $(OBJ)/leaf_conductance_tmin_curve.o \
 $(OBJ)/leaf_conductance_vpd_curve.o \
 $(OBJ)/main.o \
-$(OBJ)/output_24hours_basin.o \
-$(OBJ)/output_stream_routing.o \
 $(OBJ)/output_basin.o \
+$(OBJ)/output_stream_routing.o \
 $(OBJ)/output_basin_state.o \
 $(OBJ)/output_canopy_strata_state.o \
 $(OBJ)/output_canopy_stratum.o \
@@ -218,16 +256,20 @@ $(OBJ)/output_yearly_patch.o \
 $(OBJ)/output_yearly_zone.o \
 $(OBJ)/output_zone.o \
 $(OBJ)/output_hourly_zone.o \
+$(OBJ)/output_hourly_basin.o \
+$(OBJ)/output_hourly_growth_basin.o \
 $(OBJ)/output_zone_state.o \
 $(OBJ)/parse_alloc_flag.o \
 $(OBJ)/parse_dyn_flag.o \
 $(OBJ)/parse_phenology_type.o \
 $(OBJ)/parse_veg_type.o \
+$(OBJ)/parse_albedo_flag.o \
 $(OBJ)/patch_daily_F.o  \
 $(OBJ)/patch_daily_I.o  \
 $(OBJ)/patch_hourly.o \
 $(OBJ)/penman_monteith.o \
 $(OBJ)/read_record.o \
+$(OBJ)/readtag_worldfile.o \
 $(OBJ)/recompute_gamma.o \
 $(OBJ)/resolve_sminn_competition.o \
 $(OBJ)/snowpack_daily_F.o \
@@ -254,6 +296,7 @@ $(OBJ)/update_nitrif.o \
 $(OBJ)/update_phenology.o \
 $(OBJ)/update_rooting_depth.o \
 $(OBJ)/update_septic.o \
+$(OBJ)/update_shadow_strata.o \
 $(OBJ)/update_soil_moisture.o \
 $(OBJ)/valid_option.o \
 $(OBJ)/world_daily_F.o \
@@ -267,20 +310,70 @@ $(OBJ)/zone_daily_F.o \
 $(OBJ)/zone_daily_I.o \
 $(OBJ)/zone_hourly.o \
 $(OBJ)/construct_ascii_grid.o \
+$(OBJ)/construct_netcdf_grid.o \
+$(OBJ)/construct_netcdf_header.o \
 $(OBJ)/create_random_distrb.o \
 $(OBJ)/skip_basin.o \
 $(OBJ)/skip_hillslope.o \
 $(OBJ)/skip_zone.o \
 $(OBJ)/skip_patch.o \
 $(OBJ)/skip_strata.o \
-$(OBJ)/params.o	
+$(OBJ)/params.o \
+$(OBJ)/resemble_hourly_date.o \
+$(OBJ)/union_date_init.o \
+$(OBJ)/union_date_combine.o \
+$(OBJ)/get_num_daywhourly.o \
+$(OBJ)/date_oper_union.o \
+$(OBJ)/reconstruct_hourly_clim.o \
+
+ifdef netcdf
+OBJECTS += $(OBJ)/read_netcdf.o
+endif
+
 all:	dir rhessys
 
 dir:
 	mkdir -p $(OBJ)
+	mkdir -p $(OBJDIR_TESTS)
 
+ifdef netcdf
+ifdef wmfire
 rhessys: $(OBJECTS)
-	$(CC) $(OBJECTS) $(CFLAGS) -I include -lm -v -o $(PGM) 
+	$(CC) $(OBJECTS) $(CFLAGS) -I include -lm -L/usr/local/lib -lnetcdf -fopenmp -L./lib -lwmfire -v -o $(PGM) 
+else
+rhessys: $(OBJECTS)
+	$(CC) $(OBJECTS) $(CFLAGS) -I include -lm -L/usr/local/lib -lnetcdf -fopenmp -v -o $(PGM) 
+endif
+else
+ifdef wmfire
+rhessys: $(OBJECTS)
+	$(CC) $(OBJECTS) $(CFLAGS) -I include -lm -L./lib -lwmfire -v -o $(PGM) 
+else
+rhessys: $(OBJECTS)
+	$(CC) $(OBJECTS) $(CFLAGS) -I include -lm -L./lib -v -o $(PGM) 
+endif
+endif
+
+# For debugging purposes; usage: make print-NAMEOFMAKEVARIABLE
+print-%  : ; @echo $* = $($*)
+
+OBJECTS_NO_MAIN := $(patsubst $(OBJ)/main.o,,$(OBJECTS))
+test: dir $(TESTS)
+	# Run each unit test
+	$(patsubst %,%;,$(TESTS_TO_RUN))
+	
+$(TESTS): $(OBJECTS_NO_MAIN) $(OBJECTS_TESTS) 
+ifeq ($(OS), Darwin)
+	$(CC) $(OBJECTS_NO_MAIN) $@.o $(CFLAGS_TESTS) $(INCLUDES) $(LDLIBS_TESTS) -o $@
+else ifeq ($(OS), Linux)
+	$(CC) $(OBJECTS_NO_MAIN) $@.o $(CFLAGS_TESTS) $(INCLUDES) $(LDLIBS_TESTS) -lbsd -o $@
+else
+	$(CC) $(OBJECTS_NO_MAIN) $@.o $(CFLAGS_TESTS) $(INCLUDES) $(LDLIBS_TESTS) -o $@
+endif
+	cp $@ $(TESTS_ROOTDIR)
+
+$(OBJDIR_TESTS)/%.o: $(SRCDIR_TESTS)/%.c
+	$(CC) $(CFLAGS_TESTS) $(INCLUDES) -c -o $@ $< 
 
 $(OBJ)/alloc.o: util/alloc.c
 	$(CC) -c $(CFLAGS) -I include util/alloc.c -o $(OBJ)/alloc.o
@@ -290,6 +383,8 @@ $(OBJ)/add_growth_headers.o: output/add_growth_headers.c
 	$(CC) -c $(CFLAGS) -I include output/add_growth_headers.c -o $(OBJ)/add_growth_headers.o
 $(OBJ)/read_record.o: util/read_record.c
 	$(CC) -c $(CFLAGS) -I include util/read_record.c -o $(OBJ)/read_record.o
+$(OBJ)/readtag_worldfile.o: util/readtag_worldfile.c
+	$(CC) -c $(CFLAGS) -I include util/readtag_worldfile.c -o $(OBJ)/readtag_worldfile.o
 $(OBJ)/construct_tec.o: init/construct_tec.c
 	$(CC) -c $(CFLAGS) -I include init/construct_tec.c -o $(OBJ)/construct_tec.o
 $(OBJ)/handle_event.o: tec/handle_event.c
@@ -318,10 +413,17 @@ $(OBJ)/execute_daily_growth_output_event.o: tec/execute_daily_growth_output_even
 	$(CC) -c $(CFLAGS) -I include tec/execute_daily_growth_output_event.c -o $(OBJ)/execute_daily_growth_output_event.o
 $(OBJ)/execute_hourly_output_event.o: tec/execute_hourly_output_event.c
 	$(CC) -c $(CFLAGS) -I include tec/execute_hourly_output_event.c -o $(OBJ)/execute_hourly_output_event.o
+$(OBJ)/execute_hourly_growth_output_event.o: tec/execute_hourly_growth_output_event.c
+	$(CC) -c $(CFLAGS) -I include tec/execute_hourly_growth_output_event.c -o $(OBJ)/execute_hourly_growth_output_event.o
 $(OBJ)/execute_state_output_event.o: tec/execute_state_output_event.c
 	$(CC) -c $(CFLAGS) -I include tec/execute_state_output_event.c -o $(OBJ)/execute_state_output_event.o
+ifdef wmfire
 $(OBJ)/execute_firespread_event.o: tec/execute_firespread_event.c
 	$(CC) -c $(CFLAGS) -I include tec/execute_firespread_event.c -o $(OBJ)/execute_firespread_event.o
+else
+$(OBJ)/execute_firespread_event.o: tec/execute_firespread_event_dummy.c
+	$(CC) -c $(CFLAGS) -I include tec/execute_firespread_event_dummy.c -o $(OBJ)/execute_firespread_event.o
+endif
 $(OBJ)/execute_tec.o: tec/execute_tec.c
 	$(CC) -c $(CFLAGS) -I include tec/execute_tec.c -o $(OBJ)/execute_tec.o
 $(OBJ)/construct_command_line.o: init/construct_command_line.c
@@ -344,6 +446,12 @@ $(OBJ)/construct_fire_defaults.o: init/construct_fire_defaults.c
 	$(CC) -c $(CFLAGS) -I include init/construct_fire_defaults.c -o $(OBJ)/construct_fire_defaults.o
 $(OBJ)/construct_soil_defaults.o: init/construct_soil_defaults.c
 	$(CC) -c $(CFLAGS) -I include init/construct_soil_defaults.c -o $(OBJ)/construct_soil_defaults.o
+$(OBJ)/construct_spinup_thresholds.o: init/construct_spinup_thresholds.c
+	$(CC) -c $(CFLAGS) -I include init/construct_spinup_thresholds.c -o $(OBJ)/construct_spinup_thresholds.o
+$(OBJ)/construct_spinup_defaults.o: init/construct_spinup_defaults.c
+	$(CC) -c $(CFLAGS) -I include init/construct_spinup_defaults.c -o $(OBJ)/construct_spinup_defaults.o
+$(OBJ)/construct_empty_shadow_strata.o: init/construct_empty_shadow_strata.c
+	$(CC) -c $(CFLAGS) -I include init/construct_empty_shadow_strata.c -o $(OBJ)/construct_empty_shadow_strata.o
 $(OBJ)/construct_landuse_defaults.o: init/construct_landuse_defaults.c
 	$(CC) -c $(CFLAGS) -I include init/construct_landuse_defaults.c -o $(OBJ)/construct_landuse_defaults.o
 $(OBJ)/construct_stratum_defaults.o: init/construct_stratum_defaults.c
@@ -364,8 +472,8 @@ $(OBJ)/construct_clim_sequence.o: init/construct_clim_sequence.c
 	$(CC) -c $(CFLAGS) -I include init/construct_clim_sequence.c -o $(OBJ)/construct_clim_sequence.o
 $(OBJ)/construct_dated_clim_sequence.o: init/construct_dated_clim_sequence.c
 	$(CC) -c $(CFLAGS) -I include init/construct_dated_clim_sequence.c -o $(OBJ)/construct_dated_clim_sequence.o
-$(OBJ)/output_24hours_basin.o: output/output_24hours_basin.c
-	$(CC) -c $(CFLAGS) -I include output/output_24hours_basin.c -o $(OBJ)/output_24hours_basin.o
+$(OBJ)/output_basin.o: output/output_basin.c
+	$(CC) -c $(CFLAGS) -I include output/output_basin.c -o $(OBJ)/output_basin.o
 $(OBJ)/output_growth_patch.o: output/output_growth_patch.c
 	$(CC) -c $(CFLAGS) -I include output/output_growth_patch.c -o $(OBJ)/output_growth_patch.o
 $(OBJ)/output_growth_basin.o: output/output_growth_basin.c
@@ -408,12 +516,14 @@ $(OBJ)/output_yearly_canopy_stratum.o: output/output_yearly_canopy_stratum.c
 	$(CC) -c $(CFLAGS) -I include output/output_yearly_canopy_stratum.c -o $(OBJ)/output_yearly_canopy_stratum.o
 $(OBJ)/output_stream_routing.o: output/output_stream_routing.c
 	$(CC) -c $(CFLAGS) -I include output/output_stream_routing.c -o $(OBJ)/output_stream_routing.o
-$(OBJ)/output_basin.o: output/output_basin.c
-	$(CC) -c $(CFLAGS) -I include output/output_basin.c -o $(OBJ)/output_basin.o
 $(OBJ)/output_hillslope.o: output/output_hillslope.c
 	$(CC) -c $(CFLAGS) -I include output/output_hillslope.c -o $(OBJ)/output_hillslope.o
 $(OBJ)/output_hourly_zone.o: output/output_hourly_zone.c
 	$(CC) -c $(CFLAGS) -I include output/output_hourly_zone.c -o $(OBJ)/output_hourly_zone.o
+$(OBJ)/output_hourly_basin.o: output/output_hourly_basin.c
+	$(CC) -c $(CFLAGS) -I include output/output_hourly_basin.c -o $(OBJ)/output_hourly_basin.o
+$(OBJ)/output_hourly_growth_basin.o: output/output_hourly_growth_basin.c
+	$(CC) -c $(CFLAGS) -I include output/output_hourly_growth_basin.c -o $(OBJ)/output_hourly_growth_basin.o
 $(OBJ)/output_zone.o: output/output_zone.c
 	$(CC) -c $(CFLAGS) -I include output/output_zone.c -o $(OBJ)/output_zone.o
 $(OBJ)/output_patch.o: output/output_patch.c
@@ -516,6 +626,8 @@ $(OBJ)/assign_neighbours.o: init/assign_neighbours.c
 	$(CC) -c $(CFLAGS) -I include init/assign_neighbours.c -o $(OBJ)/assign_neighbours.o
 $(OBJ)/assign_base_station.o: init/assign_base_station.c
 	$(CC) -c $(CFLAGS) -I include init/assign_base_station.c -o $(OBJ)/assign_base_station.o
+$(OBJ)/assign_base_station_xy.o: init/assign_base_station_xy.c
+	$(CC) -c $(CFLAGS) -I include init/assign_base_station_xy.c -o $(OBJ)/assign_base_station_xy.o
 $(OBJ)/construct_zone.o: init/construct_zone.c
 	$(CC) -c $(CFLAGS) -I include init/construct_zone.c -o $(OBJ)/construct_zone.o
 $(OBJ)/construct_patch.o: init/construct_patch.c
@@ -570,6 +682,8 @@ $(OBJ)/compute_snow_stored.o: hydro/compute_snow_stored.c
 	$(CC) -c $(CFLAGS) -I include hydro/compute_snow_stored.c -o $(OBJ)/compute_snow_stored.o
 $(OBJ)/compute_Lstar.o: rad/compute_Lstar.c
 	$(CC) -c $(CFLAGS) -I include rad/compute_Lstar.c -o $(OBJ)/compute_Lstar.o
+$(OBJ)/compute_Lstar_canopy.o: rad/compute_Lstar_canopy.c
+	$(CC) -c $(CFLAGS) -I include rad/compute_Lstar_canopy.c -o $(OBJ)/compute_Lstar_canopy.o
 $(OBJ)/compute_stability_correction.o: hydro/compute_stability_correction.c
 	$(CC) -c $(CFLAGS) -I include hydro/compute_stability_correction.c -o $(OBJ)/compute_stability_correction.o
 $(OBJ)/compute_atm_pres.o: clim/compute_atm_pres.c
@@ -604,6 +718,8 @@ $(OBJ)/compute_nonvascular_stratum_conductance.o: hydro/compute_nonvascular_stra
 	$(CC) -c $(CFLAGS) -I include hydro/compute_nonvascular_stratum_conductance.c -o $(OBJ)/compute_nonvascular_stratum_conductance.o
 $(OBJ)/compute_vascular_stratum_conductance.o: hydro/compute_vascular_stratum_conductance.c
 	$(CC) -c $(CFLAGS) -I include hydro/compute_vascular_stratum_conductance.c -o $(OBJ)/compute_vascular_stratum_conductance.o
+$(OBJ)/compute_vapor_pressure_deficit.o: hydro/compute_vapor_pressure_deficit.c
+	$(CC) -c $(CFLAGS) -I include hydro/compute_vapor_pressure_deficit.c -o $(OBJ)/compute_vapor_pressure_deficit.o
 $(OBJ)/compute_vapour_conductance.o: hydro/compute_vapour_conductance.c
 	$(CC) -c $(CFLAGS) -I include hydro/compute_vapour_conductance.c -o $(OBJ)/compute_vapour_conductance.o
 $(OBJ)/compute_toc_wind.o: clim/compute_toc_wind.c
@@ -642,6 +758,8 @@ $(OBJ)/compute_varbased_flow.o: hydro/compute_varbased_flow.c
 	$(CC) -c $(CFLAGS) -I include hydro/compute_varbased_flow.c -o $(OBJ)/compute_varbased_flow.o
 $(OBJ)/compute_return_flow.o: hydro/compute_return_flow.c
 	$(CC) -c $(CFLAGS) -I include hydro/compute_return_flow.c -o $(OBJ)/compute_return_flow.o
+$(OBJ)/compute_saturation_vapor_pressure.o: hydro/compute_saturation_vapor_pressure.c
+	$(CC) -c $(CFLAGS) -I include hydro/compute_saturation_vapor_pressure.c -o $(OBJ)/compute_saturation_vapor_pressure.o
 $(OBJ)/compute_snow_sublimation.o: hydro/compute_snow_sublimation.c
 	$(CC) -c $(CFLAGS) -I include hydro/compute_snow_sublimation.c -o $(OBJ)/compute_snow_sublimation.o
 $(OBJ)/compute_capillary_rise.o: hydro/compute_capillary_rise.c
@@ -761,6 +879,8 @@ $(OBJ)/compute_potential_N_uptake_Waring.o: cn/compute_potential_N_uptake_Waring
 	$(CC) -c $(CFLAGS) -I include cn/compute_potential_N_uptake_Waring.c -o $(OBJ)/compute_potential_N_uptake_Waring.o
 $(OBJ)/compute_potential_N_uptake_Dickenson.o: cn/compute_potential_N_uptake_Dickenson.c 
 	$(CC) -c $(CFLAGS) -I include cn/compute_potential_N_uptake_Dickenson.c -o $(OBJ)/compute_potential_N_uptake_Dickenson.o
+$(OBJ)/compute_potential_N_uptake_combined.o: cn/compute_potential_N_uptake_combined.c 
+	$(CC) -c $(CFLAGS) -I include cn/compute_potential_N_uptake_combined.c -o $(OBJ)/compute_potential_N_uptake_combined.o
 $(OBJ)/compute_litter_rain_stored.o: hydro/compute_litter_rain_stored.c 
 	$(CC) -c $(CFLAGS) -I include hydro/compute_litter_rain_stored.c -o $(OBJ)/compute_litter_rain_stored.o
 $(OBJ)/compute_hourly_litter_rain_stored.o: hydro/compute_hourly_litter_rain_stored.c
@@ -777,6 +897,8 @@ $(OBJ)/parse_veg_type.o: init/parse_veg_type.c
 	$(CC) -c $(CFLAGS) -I include init/parse_veg_type.c -o $(OBJ)/parse_veg_type.o
 $(OBJ)/parse_phenology_type.o: init/parse_phenology_type.c 
 	$(CC) -c $(CFLAGS) -I include init/parse_phenology_type.c -o $(OBJ)/parse_phenology_type.o
+$(OBJ)/parse_albedo_flag.o: init/parse_albedo_flag.c 
+	$(CC) -c $(CFLAGS) -I include init/parse_albedo_flag.c -o $(OBJ)/parse_albedo_flag.o
 $(OBJ)/resolve_sminn_competition.o: cn/resolve_sminn_competition.c 
 	$(CC) -c $(CFLAGS) -I include cn/resolve_sminn_competition.c -o $(OBJ)/resolve_sminn_competition.o
 $(OBJ)/update_C_stratum_daily.o: cn/update_C_stratum_daily.c 
@@ -785,6 +907,8 @@ $(OBJ)/update_N_stratum_daily.o: cn/update_N_stratum_daily.c
 	$(CC) -c $(CFLAGS) -I include cn/update_N_stratum_daily.c -o $(OBJ)/update_N_stratum_daily.o
 $(OBJ)/update_decomp.o: cn/update_decomp.c 
 	$(CC) -c $(CFLAGS) -I include cn/update_decomp.c -o $(OBJ)/update_decomp.o
+$(OBJ)/update_shadow_strata.o: cn/update_shadow_strata.c
+	$(CC) -c $(CFLAGS) -I include cn/update_shadow_strata.c -o $(OBJ)/update_shadow_strata.o
 $(OBJ)/update_septic.o: cn/update_septic.c 
 	$(CC) -c $(CFLAGS) -I include cn/update_septic.c -o $(OBJ)/update_septic.o
 $(OBJ)/update_gw_drainage.o: hydro/update_gw_drainage.c 
@@ -811,9 +935,33 @@ $(OBJ)/output_template_structure.o: output/output_template_structure.c
 	$(CC) -c $(CFLAGS) -I include output/output_template_structure.c -o $(OBJ)/output_template_structure.o
 $(OBJ)/construct_ascii_grid.o: init/construct_ascii_grid.c
 	$(CC) -c $(CFLAGS) -I include init/construct_ascii_grid.c -o $(OBJ)/construct_ascii_grid.o
+
+ifdef netcdf
+$(OBJ)/read_netcdf.o: init/read_netcdf.c
+	$(CC) -c $(CFLAGS) -I include init/read_netcdf.c -o $(OBJ)/read_netcdf.o
+$(OBJ)/construct_netcdf_grid.o: init/construct_netcdf_grid.c
+	$(CC) -c $(CFLAGS) -I include init/construct_netcdf_grid.c -o $(OBJ)/construct_netcdf_grid.o
+else
+$(OBJ)/construct_netcdf_grid.o: init/construct_netcdf_grid_dummy.c
+	$(CC) -c $(CFLAGS) -I include init/construct_netcdf_grid_dummy.c -o $(OBJ)/construct_netcdf_grid.o
+endif
+
+$(OBJ)/construct_netcdf_header.o: init/construct_netcdf_header.c
+	$(CC) -c $(CFLAGS) -I include init/construct_netcdf_header.c -o $(OBJ)/construct_netcdf_header.o
 $(OBJ)/params.o: util/params.c
 	$(CC) -c $(CFLAGS) -I include util/params.c -o $(OBJ)/params.o
-
+$(OBJ)/resemble_hourly_date.o: util/resemble_hourly_date.c
+	$(CC) -c $(CFLAGS) -I include util/resemble_hourly_date.c -o $(OBJ)/resemble_hourly_date.o
+$(OBJ)/union_date_init.o: util/union_date_init.c
+	$(CC) -c $(CFLAGS) -I include util/union_date_init.c -o $(OBJ)/union_date_init.o
+$(OBJ)/union_date_combine.o: util/union_date_combine.c
+	$(CC) -c $(CFLAGS) -I include util/union_date_combine.c -o $(OBJ)/union_date_combine.o
+$(OBJ)/get_num_daywhourly.o: util/get_num_daywhourly.c
+	$(CC) -c $(CFLAGS) -I include util/get_num_daywhourly.c -o $(OBJ)/get_num_daywhourly.o
+$(OBJ)/date_oper_union.o: util/date_oper_union.c
+	$(CC) -c $(CFLAGS) -I include util/date_oper_union.c -o $(OBJ)/date_oper_union.o
+$(OBJ)/reconstruct_hourly_clim.o: init/reconstruct_hourly_clim.c
+	$(CC) -c $(CFLAGS) -I include init/reconstruct_hourly_clim.c -o $(OBJ)/reconstruct_hourly_clim.o
 $(OBJ)/main.o: main.c setversion
 	$(CC) -c $(CFLAGS) -I include main.c -o $(OBJ)/main.o
 
@@ -831,6 +979,12 @@ install:
 
 clean:
 	rm -f $(OBJECTS)
+	rm -f $(OBJDIR_TESTS)/*
+	rm -f $(TESTS_TO_RUN)
 
 clobber:
 	rm -f $(OBJECTS) $(PGM)
+
+functest: rhessys
+	# Run Python-based functional testing
+	RHESSYS_BIN=$(PGM) python -m unittest discover -s test

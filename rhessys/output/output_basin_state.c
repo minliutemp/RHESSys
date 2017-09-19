@@ -62,7 +62,7 @@ void	output_basin_state(
 	fprintf(outfile,"\n   ");
 	fprintf(outfile,"%-30.8f %s",basin[0].z, "z");
 	fprintf(outfile,"\n   ");
-	fprintf(outfile,"%-30ld %s",basin[0].defaults[0][0].ID, "default_ID");
+	fprintf(outfile,"%-30ld %s",basin[0].defaults[0][0].ID, "basin_parm_ID");
 	fprintf(outfile,"\n   ");
 	fprintf(outfile,"%-30.8f %s",basin[0].latitude, "latitude");
 	fprintf(outfile,"\n   ");
@@ -80,5 +80,6 @@ void	output_basin_state(
 	for (h=0; h < basin[0].num_hillslopes; ++ h ) {
 		output_hillslope_state(basin[0].hillslopes[h], current_date, command_line, outfile);
 	}
+    printf("\n Finishing basin output state\n");
 	return;
 } /*end output_basin_state*/

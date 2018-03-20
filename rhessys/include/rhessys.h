@@ -2698,6 +2698,8 @@ struct  stratum_default
        struct target_object { 
               double lai;
               double total_stemc;
+              double height;
+              double age;
               int    met;
        };
 /*----------------------------------------------------------*/
